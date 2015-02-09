@@ -8,16 +8,18 @@ public class Controls {
 	private int height = 400;
 	private int width = 300;
 	Toggle grav_toggle, repulsion_toggle;
-	Button step_button, play_button, user_control;
+	Button step_button, play_button, user_control, springs;
 	boolean gravity = true;
 	boolean repulsion = true;
 	public Slider inellastic_slider, radius_slider, particleCount_slider, damping_slider, gravity_slider, repulsion_slider;
+	public Slider rest_length_slider;
 	float inellasticCollision, radius_float, damp_float;
-	int particleCount = 500;
+	int particleCount = 2;
 	int sliderValue = 120;
 	float gravity_mag = (float) 9.81;
+	float rest_length = (float) 0.25;
 	boolean pause = true;
-	boolean single_step, user_control_bool;
+	boolean single_step, user_control_bool, spring_select;
 	
 	@SuppressWarnings("static-access")
 	public Controls(MainGUI gui) {
@@ -40,7 +42,7 @@ public class Controls {
 		//GLOBAL CONTROLLERS
 		
 		play_button = cp5.addButton("Play")
-				.setPosition((Simulation.width/4)-30, Simulation.height + 35)
+				.setPosition((Simulation.width/5)-30, Simulation.height + 35)
 				.setSize(60, 20)
 				.setBroadcast(true)
 				.setSwitch(true);
@@ -53,15 +55,22 @@ public class Controls {
 		cp5.getController("Play").getCaptionLabel().align(ControlP5.CENTER,ControlP5.CENTER);
 		
 		step_button = cp5.addButton("Single Step")
-				.setPosition((2*Simulation.width/4)-30, Simulation.height + 35)
+				.setPosition((2*Simulation.width/5)-30, Simulation.height + 35)
 				.setSize(60, 20);
 		
 		cp5.getController("Single Step").getCaptionLabel().align(ControlP5.CENTER,ControlP5.CENTER);
 		
 		user_control = cp5.addButton("User Control")
-				.setPosition((3*Simulation.width/4)-30, Simulation.height + 35)
+				.setPosition((3*Simulation.width/5)-30, Simulation.height + 35)
 				.setSize(60, 20)
 				.setSwitch(true);
+		
+		springs = cp5.addButton("Springs")
+				.setPosition((4*Simulation.width/5)-30, Simulation.height + 35)
+				.setSize(60,20)
+				.setSwitch(true);
+		
+		cp5.getController("Springs").getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER);
 		
 		//SIMULATION TAB
 		
@@ -128,6 +137,14 @@ public class Controls {
 		
 		cp5.getController("Gravity Strength").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
 		
+		rest_length_slider = cp5.addSlider("Rest Length Slider")
+				.setPosition(Simulation.width + width/2-100, 395)
+				.setSize(200,20)
+				.setValue(rest_length)
+				.setRange(0, 5);
+		
+		cp5.getController("Rest Length Slider").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
+		
 		
 		//ARANGE CONTROLLERS INTO THEIR TABS
 		cp5.getController("Gravity").moveTo("Forces");
@@ -137,11 +154,13 @@ public class Controls {
 		cp5.getController("Repulsion Strength").moveTo("Forces");
 		cp5.getController("Viscous Damping").moveTo("Forces");
 		cp5.getController("Gravity Strength").moveTo("Forces");
+		cp5.getController("Rest Length Slider").moveTo("Forces");
 		
 		//SET GLOBAL CONTROLLERS
 		cp5.getController("Play").moveTo("global");
 		cp5.getController("Single Step").moveTo("global");
 		cp5.getController("User Control").moveTo("global");
+		cp5.getController("Springs").moveTo("global");
 
 		
 		
@@ -169,6 +188,8 @@ public class Controls {
 		pause = play_button.getBooleanValue();
 		single_step = step_button.getBooleanValue();
 		user_control_bool = user_control.getBooleanValue();
+		spring_select = springs.getBooleanValue();
+		rest_length = rest_length_slider.getValue();
 		
 		if (pause) 
 			play_button.setCaptionLabel("Play");

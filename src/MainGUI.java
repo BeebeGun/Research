@@ -63,6 +63,10 @@ public class MainGUI extends PApplet {
 		sim.keyPressed();
 	}
 	
+	public void mouseReleased() {
+		sim.mouseReleased();
+	}
+	
 	public void updateValues() {
 		sim.inellastic = con.inellasticCollision;
 		sim.gravity = con.gravity;
@@ -73,5 +77,7 @@ public class MainGUI extends PApplet {
 		sim.grav_mag = con.gravity_mag;
 		sim.pause = con.pause;
 		sim.user_control = con.user_control_bool;
+		sim.spring_select = con.spring_select;
+		sim.rest_length = con.rest_length;
 	}
 }
