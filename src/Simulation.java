@@ -59,21 +59,27 @@ public class Simulation {
 		//step forward in time
 		time += delta_t;
 	  
-		//draw the test particle
-		for (Particle part : parts) {
-			if (mousedown && part != closest)
-				part.draw();
-			else if (!mousedown)
-				part.draw();
-			//TODO don't draw closest twice
+		for (Particle p : parts) {
+			p.update();
 		}
 		
+		
 		if (mousedown) {
+			//if the user currently has control of this particle
 			if (gui.mouseX < Simulation.width && gui.mouseY < Simulation.height && user_control) {
 				closest.pos.x = gui.mouseX;
 				closest.pos.y = gui.mouseY;
 				closest.draw();
 			}
+		}
+	
+		for (Particle part : parts) {
+			//if not the particle the user is currently controlling, draw it
+			if (mousedown && part != closest)
+				part.draw();
+			//if the mouse is not down, draw all of them
+			else if (!mousedown)
+				part.draw();
 		}
 		
 	}
@@ -96,6 +102,11 @@ public class Simulation {
 			}
 			mousedown = true;
 		}
+		
+		if ((gui.mouseX > Simulation.width || gui.mouseY > Simulation.height || gui.mouseX < 0 || gui.mouseY < 0) && user_control) {
+			mousedown = false;
+		}
+		
 		//CREATE SPRINGS BETWEEN PARTICLES
 		if (gui.mouseX < Simulation.width && gui.mouseY < Simulation.height && spring_select) {
 			if (s_closest == null) {
@@ -117,11 +128,9 @@ public class Simulation {
 			}
 		}
 		if (s_closest != s_connection && s_connection != null && s_closest != null) {
-			s_closest.connected.add(s_connection);
-			s_connection.connected.add(s_closest);
-			float rest_length_temp = s_closest.pos.dist(s_connection.pos);
-			s_closest.rest_lengths.add(rest_length_temp);
-			s_connection.rest_lengths.add(rest_length_temp);
+			Spring spr = new Spring(s_closest, s_connection);
+			s_closest.springs.add(spr);
+			s_connection.springs.add(spr);
 		}
 		if (s_closest != null && s_connection != null) {
 			s_closest = null;
@@ -132,13 +141,6 @@ public class Simulation {
 	public void mouseReleased() {
 		if (gui.mouseX < Simulation.width && gui.mouseY < Simulation.height)
 			mousedown = false;
-	}
-	
-	public void mouseDragged() {
-		if (gui.mouseX < Simulation.width && gui.mouseY < Simulation.height && user_control) {
-			closest.pos.x = gui.mouseX;
-			closest.pos.y = gui.mouseY;
-		}
 	}
 	
 	public void updateParticleCount(int newCount) {

@@ -12,8 +12,7 @@ public class Particle {
 	PVector v;
 	PVector a;
 	PVector repulse;
-	ArrayList<Particle> connected = new ArrayList<Particle>();
-	ArrayList<Float> rest_lengths = new ArrayList<Float>();
+	ArrayList<Spring> springs = new ArrayList<Spring>();
 	
 	
   @SuppressWarnings("static-access")
@@ -27,65 +26,15 @@ public Particle(Simulation env, float x, float y, float v_x, float v_y) {
 	  repulse = new PVector(0, 0);
   }
   
-  @SuppressWarnings("static-access")
+
 void draw() {
     
 	  parent.ellipse(pos.x, pos.y, 3, 3);
 	  
-	  for (Particle p : connected) {
-	    	parent.line(pos.x, pos.y, p.pos.x, p.pos.y);
+	  for (Spring s : springs) {
+	    	parent.line(s.getP1().pos.x, s.getP1().pos.y, s.getP2().pos.x, s.getP2().pos.y);
 	    }
     
-    a = new PVector(0,0);
-    
-    if (env.gravity) {
-      PVector f_grav = new PVector(0, env.grav_mag * env.height);
-      a.add(f_grav);
-    }
-    
-    //repulsion forces
-    if (env.repulsion) {
-	    for (Particle p : env.parts) {
-	      float dist = parent.dist(pos.x, pos.y, p.pos.x, p.pos.y);
-	      if (dist > 0 && dist <= env.radius) {
-	        //REPULSE! 
-	        float s_max = (float) ((env.radius-dist)/env.radius); // range of s_max [0,1)
-	        PVector pMinusQ = new PVector(pos.x - p.pos.x, pos.y - p.pos.y);
-	        float pMinusQMag = pMinusQ.mag();
-	        PVector force = PVector.div(pMinusQ, pMinusQMag);
-	        force.mult(s_max);
-	        force.mult(env.width*3);
-	        
-	        a.add(force);
-	        
-	      }
-	    }
-    }
-    
-    //calculate forces on particles connected by springs
-    for (int i = 0; i < connected.size(); i++) {
-    	Particle part = connected.get(i);
-    	PVector l = new PVector(pos.x - part.pos.x, pos.y - part.pos.y);
-    	float l_mag = l.mag();
-    	PVector unit_l = PVector.div(l, l_mag);
-    	float s_mag = -env.spring_constant*(l_mag-part.rest_lengths.get(i));
-    	PVector l_deriv = new PVector(v.x - part.v.x, v.y - part.v.y);
-    	float temp_l = l.dot(l_deriv);
-    	temp_l = temp_l/l_mag;
-    	//float damping_term = temp_l*env.spring_damp;
-    	//float f_spring_mag = (s_mag+damping_term);
-    	PVector f_spring = PVector.mult(unit_l, s_mag); //f_spring_mag with damping
-    	//f_spring = PVector.mult(f_spring, 5);
-    	
-    	a.add(f_spring);
-    	//System.out.println(f_spring);
-    }
-    
-    PVector f_temp = new PVector((-env.damp*3)*v.x, (-env.damp*3)*v.y);
-    a.add(f_temp);
-    
-    calcVelocity();
-     
   }
   
   public String toString() {
@@ -98,8 +47,6 @@ void draw() {
 void calcVelocity() {
     float new_vx = v.x + (env.delta_t * a.x);
     float new_vy = v.y + (env.delta_t * a.y);
-    //new_vx *= env.damp;
-    //new_vy *= env.damp;
     v.set(new_vx, new_vy);
     
   //if particle hits a vertical wall, negate velocity in the x direction
@@ -124,6 +71,63 @@ void calcVelocity() {
     float new_x = pos.x + (env.delta_t * v.x);
     float new_y = pos.y + (env.delta_t * v.y);
     pos.set(new_x, new_y);
+  }
+  
+  @SuppressWarnings("static-access")
+public void update() {
+	  a = new PVector(0,0);
+
+	  if (env.gravity) {
+		  PVector f_grav = new PVector(0, env.grav_mag * env.height);
+		  a.add(f_grav);
+	  }
+
+	  //repulsion forces
+	  if (env.repulsion) {
+		  for (Particle p : env.parts) {
+			  float dist = parent.dist(pos.x, pos.y, p.pos.x, p.pos.y);
+			  if (dist > 0 && dist <= env.radius) {
+				  //REPULSE! 
+				  float s_max = (float) ((env.radius-dist)/env.radius); // range of s_max [0,1)
+				  PVector pMinusQ = new PVector(pos.x - p.pos.x, pos.y - p.pos.y);
+				  float pMinusQMag = pMinusQ.mag();
+				  PVector force = PVector.div(pMinusQ, pMinusQMag);
+				  force.mult(s_max);
+				  force.mult(env.width*3);
+
+				  a.add(force);
+
+			  }
+		  }
+	  }
+
+	  //calculate forces on particles connected by springs
+	  for (int i = 0; i < springs.size(); i++) { //for every spring
+	    	Particle part = null;
+	    	if (springs.get(i).getP1() == this) //if this is p1 in the spring, get p2
+	    		part = springs.get(i).getP2();
+	    	else //if this is p2 in the spring, get p1
+	    		part = springs.get(i).getP1();
+	    	PVector l = new PVector(pos.x - part.pos.x, pos.y - part.pos.y);
+	    	float l_mag = l.mag();
+	    	PVector unit_l = PVector.div(l, l_mag);
+	    	float s_mag = -env.spring_constant*(l_mag-springs.get(i).getRestLength());
+	    	PVector l_deriv = new PVector(v.x - part.v.x, v.y - part.v.y);
+	    	float temp_l = l.dot(l_deriv);
+	    	temp_l = temp_l/l_mag;
+	    	//float damping_term = temp_l*env.spring_damp;
+	    	//float f_spring_mag = (s_mag+damping_term);
+	    	PVector f_spring = PVector.mult(unit_l, s_mag); //f_spring_mag with damping
+	    	//f_spring = PVector.mult(f_spring, 5);
+
+		  a.add(f_spring);
+		  //System.out.println(f_spring);
+	  }
+
+	  PVector f_temp = new PVector((-env.damp*3)*v.x, (-env.damp*3)*v.y);
+	  a.add(f_temp);
+
+	  calcVelocity();
   }
 
 }

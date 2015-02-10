@@ -54,10 +54,6 @@ public class MainGUI extends PApplet {
 		sim.mousePressed();
 	}
 	
-	public void mouseDragged() {
-		sim.mouseDragged();
-	}
-	
 	public void keyPressed() {
 		
 		sim.keyPressed();

@@ -5,6 +5,7 @@ public class Spring {
 	private Particle p1;
 	private Particle p2;
 	private float rest_length;
+	private boolean drawn;
 
 	public Spring(Particle p1, Particle p2) {
 		this.p1 = p1;
@@ -22,6 +23,10 @@ public class Spring {
 
 	public float getRestLength() {
 		return rest_length;
+	}
+	
+	public boolean isDrawn() {
+		return drawn;
 	}
 
 }
