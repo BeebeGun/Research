@@ -27,7 +27,7 @@ public class Simulation {
 	float spring_constant = (float) 5;
 	float rest_length = (float) 0.25;
 	float spring_damp = (float) 0.5;
-	boolean spring_select;
+	boolean spring_select, break_springs;
 	Particle s_closest, s_connection = null;
 	
 	// initialize stuff
@@ -40,10 +40,6 @@ public class Simulation {
 			Particle part = new Particle(this, rand.nextFloat(), rand.nextFloat(), (float)((rand.nextFloat()*2-1)*0.0), (float)((rand.nextFloat()*2-1)*0.0));
 			parts.add(part);
 		}
-		/*Particle p0 = new Particle(0.25, 0.5, 0.25, 0);
-	  	Particle p1 = new Particle(0.75, 0.49, -0.25, 0);
-	  	parts.add(p0);
-	  	parts.add(p1);*/
 	  
 	}
 	
@@ -107,8 +103,9 @@ public class Simulation {
 			mousedown = false;
 		}
 		
-		//CREATE SPRINGS BETWEEN PARTICLES
-		if (gui.mouseX < Simulation.width && gui.mouseY < Simulation.height && spring_select) {
+		
+		//SPRINGS BETWEEN PARTICLES
+		if (gui.mouseX < Simulation.width && gui.mouseY < Simulation.height) {
 			if (s_closest == null) {
 				s_closest = parts.get(0);
 				for (Particle p : parts) {
@@ -127,19 +124,29 @@ public class Simulation {
 				}
 			}
 		}
-		if (s_closest != s_connection && s_connection != null && s_closest != null) {
+		
+		//CREATE SPRING BETWEEN PARTICLES
+		if (s_closest != s_connection && s_connection != null && s_closest != null && spring_select && !break_springs) {
 			Spring spr = new Spring(s_closest, s_connection);
 			s_closest.springs.add(spr);
 			s_connection.springs.add(spr);
 		}
+		
+		//BREAK SPRINGS BETWEEN PARTICLES
+		if (s_closest != s_connection && s_connection != null && s_closest != null && break_springs && !spring_select) {
+			breakSprings(s_closest, s_connection);
+		}
+		
+		//CLEAR TWO SELECTED PARTICLES
 		if (s_closest != null && s_connection != null) {
 			s_closest = null;
 			s_connection = null;
 		}
+		
 	}
 	
 	public void mouseReleased() {
-		if (gui.mouseX < Simulation.width && gui.mouseY < Simulation.height)
+		if (gui.mouseX < Simulation.width && gui.mouseY < Simulation.height && gui.mouseX > 0 && gui.mouseY > 0)
 			mousedown = false;
 	}
 	
@@ -148,6 +155,27 @@ public class Simulation {
 			int difference = parts.size() - particleCount;
 			for (int i = 0; i < difference; i++) {
 				int index = rand.nextInt(parts.size());
+				Particle removeMe = parts.get(index);
+				
+				if (removeMe.springs.size() > 0) { //if the particle we're removing has springs
+					for (Spring s : removeMe.springs) { //go through every spring and remove it from the other particle
+						if (s.getP1().equals(removeMe)) {//if this is p1, remove from p2's list
+							//get P2's springs and find the one that has the one we're removing
+							for (int j = 0; j < s.getP2().springs.size(); j ++) {
+								if (s.equals(s.getP2().springs.get(j))) {
+									s.getP2().springs.remove(j);
+								}
+							}
+						}
+						else if (s.getP2().equals(removeMe)) {
+							for (int j = 0; j < s.getP1().springs.size(); j ++) {
+								if (s.equals(s.getP1().springs.get(j))) {
+									s.getP1().springs.remove(j);
+								}
+							}
+						}
+					}
+				}
 				parts.remove(index);
 			}
 		}
@@ -157,6 +185,21 @@ public class Simulation {
 				//create random particles; position is [0,1) and velocity is [-1,1)
 				Particle part = new Particle(this, rand.nextFloat(), rand.nextFloat(), (float)((rand.nextFloat()*2-1)*0.0), (float)((rand.nextFloat()*2-1)*0.0));
 				parts.add(part);
+			}
+		}
+	}
+	
+	public void breakSprings(Particle p1, Particle p2) {
+		for (int i = 0; i < p1.springs.size(); i++) { //delete the spring with p2 from p1's spring list
+			Spring temp = p1.springs.get(i);
+			if (temp.getP1().equals(p2) || temp.getP2().equals(p2)) {
+				p1.springs.remove(i);
+			}
+		}
+		for (int i = 0; i < p2.springs.size(); i++) {
+			Spring temp = p2.springs.get(i);
+			if (temp.getP1().equals(p1) || temp.getP2().equals(p1)) {
+				p2.springs.remove(i);
 			}
 		}
 	}

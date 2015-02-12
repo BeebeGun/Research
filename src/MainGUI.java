@@ -74,6 +74,8 @@ public class MainGUI extends PApplet {
 		sim.pause = con.pause;
 		sim.user_control = con.user_control_bool;
 		sim.spring_select = con.spring_select;
-		sim.rest_length = con.rest_length;
+		sim.spring_constant = con.spring_constant;
+		sim.spring_damp = con.spring_damp;
+		sim.break_springs = con.spring_delete;
 	}
 }

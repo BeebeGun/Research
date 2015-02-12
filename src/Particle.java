@@ -13,6 +13,8 @@ public class Particle {
 	PVector a;
 	PVector repulse;
 	ArrayList<Spring> springs = new ArrayList<Spring>();
+	private static int staticParticleId = 0;
+	int particleId;
 	
 	
   @SuppressWarnings("static-access")
@@ -24,17 +26,21 @@ public Particle(Simulation env, float x, float y, float v_x, float v_y) {
 	  v = new PVector(v_x * env.width, v_y * env.height);
 	  a = new PVector(0,0);
 	  repulse = new PVector(0, 0);
+	  
+	  staticParticleId++;
+	  this.particleId = staticParticleId;
   }
   
 
 void draw() {
     
-	  parent.ellipse(pos.x, pos.y, 3, 3);
-	  
-	  for (Spring s : springs) {
-	    	parent.line(s.getP1().pos.x, s.getP1().pos.y, s.getP2().pos.x, s.getP2().pos.y);
-	    }
-    
+	if (pos.x < parent.width && pos.y < parent.height)
+		parent.ellipse(pos.x, pos.y, 3, 3);
+
+	for (Spring s : springs) {
+		parent.line(s.getP1().pos.x, s.getP1().pos.y, s.getP2().pos.x, s.getP2().pos.y);
+	}
+
   }
   
   public String toString() {
@@ -129,5 +135,11 @@ public void update() {
 
 	  calcVelocity();
   }
-
+  
+  public boolean equals(Particle p) {
+	  if (particleId == p.particleId)
+		  return true;
+	  return false;
+  }
+  
 }

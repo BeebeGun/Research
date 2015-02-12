@@ -8,18 +8,19 @@ public class Controls {
 	private int height = 400;
 	private int width = 300;
 	Toggle grav_toggle, repulsion_toggle;
-	Button step_button, play_button, user_control, springs;
+	Button step_button, play_button, user_control, springs, break_springs;
 	boolean gravity = true;
 	boolean repulsion = true;
 	public Slider inellastic_slider, radius_slider, particleCount_slider, damping_slider, gravity_slider, repulsion_slider;
-	public Slider rest_length_slider;
+	public Slider spring_constant_slider, spring_damp_slider;
 	float inellasticCollision, radius_float, damp_float;
 	int particleCount = 2;
 	int sliderValue = 120;
-	float gravity_mag = (float) 9.81;
-	float rest_length = (float) 0.25;
+	float gravity_mag = (float) 5.00;
+	float spring_constant = 500;
+	float spring_damp = (float) 0.5;
 	boolean pause = true;
-	boolean single_step, user_control_bool, spring_select;
+	boolean single_step, user_control_bool, spring_select, spring_delete;
 	
 	@SuppressWarnings("static-access")
 	public Controls(MainGUI gui) {
@@ -31,6 +32,8 @@ public class Controls {
 		
 		cp5.addTab("Forces");
 		
+		cp5.addTab("Springs");
+		
 		cp5.getTab("default")
 			.setLabel("Simulation")
 			.setId(1);
@@ -38,11 +41,14 @@ public class Controls {
 		cp5.getTab("Forces")
 			.setId(2);
 		
+		cp5.getTab("Springs")
+			.setId(3);
+		
 		
 		//GLOBAL CONTROLLERS
 		
 		play_button = cp5.addButton("Play")
-				.setPosition((Simulation.width/5)-30, Simulation.height + 35)
+				.setPosition((Simulation.width/4)-30, Simulation.height + 35)
 				.setSize(60, 20)
 				.setBroadcast(true)
 				.setSwitch(true);
@@ -55,22 +61,16 @@ public class Controls {
 		cp5.getController("Play").getCaptionLabel().align(ControlP5.CENTER,ControlP5.CENTER);
 		
 		step_button = cp5.addButton("Single Step")
-				.setPosition((2*Simulation.width/5)-30, Simulation.height + 35)
+				.setPosition((2*Simulation.width/4)-30, Simulation.height + 35)
 				.setSize(60, 20);
 		
 		cp5.getController("Single Step").getCaptionLabel().align(ControlP5.CENTER,ControlP5.CENTER);
 		
 		user_control = cp5.addButton("User Control")
-				.setPosition((3*Simulation.width/5)-30, Simulation.height + 35)
+				.setPosition((3*Simulation.width/4)-30, Simulation.height + 35)
 				.setSize(60, 20)
 				.setSwitch(true);
 		
-		springs = cp5.addButton("Springs")
-				.setPosition((4*Simulation.width/5)-30, Simulation.height + 35)
-				.setSize(60,20)
-				.setSwitch(true);
-		
-		cp5.getController("Springs").getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER);
 		
 		//SIMULATION TAB
 		
@@ -137,13 +137,38 @@ public class Controls {
 		
 		cp5.getController("Gravity Strength").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
 		
-		rest_length_slider = cp5.addSlider("Rest Length Slider")
-				.setPosition(Simulation.width + width/2-100, 395)
+		
+		//SPRINGS TAB
+		
+		springs = cp5.addButton("Create Springs")
+				.setPosition(Simulation.width + (width/3)-40, 35)
+				.setSize(80,20)
+				.setSwitch(true);
+		
+		cp5.getController("Create Springs").getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER);
+		
+		break_springs = cp5.addButton("Break Springs")
+				.setPosition((Simulation.width + 2*(width/3))-40, 35)
+				.setSize(80, 20)
+				.setSwitch(true);
+		
+		cp5.getController("Break Springs").getCaptionLabel().align(ControlP5.CENTER, ControlP5.CENTER);
+		
+		spring_constant_slider = cp5.addSlider("Spring Constant")
+				.setPosition(Simulation.width + width/2-100, 95)
 				.setSize(200,20)
-				.setValue(rest_length)
+				.setValue(spring_constant)
+				.setRange(0, 500);
+		
+		cp5.getController("Spring Constant").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
+		
+		spring_damp_slider = cp5.addSlider("Spring Damp")
+				.setPosition(Simulation.width + width/2-100, 155)
+				.setSize(200,20)
+				.setValue(spring_damp)
 				.setRange(0, 5);
 		
-		cp5.getController("Rest Length Slider").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
+		cp5.getController("Spring Damp").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
 		
 		
 		//ARANGE CONTROLLERS INTO THEIR TABS
@@ -154,13 +179,17 @@ public class Controls {
 		cp5.getController("Repulsion Strength").moveTo("Forces");
 		cp5.getController("Viscous Damping").moveTo("Forces");
 		cp5.getController("Gravity Strength").moveTo("Forces");
-		cp5.getController("Rest Length Slider").moveTo("Forces");
+		
+		//SPRINGS TAB
+		cp5.getController("Create Springs").moveTo("Springs");
+		cp5.getController("Break Springs").moveTo("Springs");
+		cp5.getController("Spring Constant").moveTo("Springs");
+		cp5.getController("Spring Damp").moveTo("Springs");
 		
 		//SET GLOBAL CONTROLLERS
 		cp5.getController("Play").moveTo("global");
 		cp5.getController("Single Step").moveTo("global");
 		cp5.getController("User Control").moveTo("global");
-		cp5.getController("Springs").moveTo("global");
 
 		
 		
@@ -189,7 +218,9 @@ public class Controls {
 		single_step = step_button.getBooleanValue();
 		user_control_bool = user_control.getBooleanValue();
 		spring_select = springs.getBooleanValue();
-		rest_length = rest_length_slider.getValue();
+		spring_constant = spring_constant_slider.getValue();
+		spring_damp = spring_damp_slider.getValue();
+		spring_delete = break_springs.getBooleanValue();
 		
 		if (pause) 
 			play_button.setCaptionLabel("Play");
