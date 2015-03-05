@@ -77,5 +77,8 @@ public class MainGUI extends PApplet {
 		sim.spring_constant = con.spring_constant;
 		sim.spring_damp = con.spring_damp;
 		sim.break_springs = con.spring_delete;
+		sim.repulsion_strength = con.repulsion_strength;
+		sim.planar = con.planar;
+		sim.bulge = con.bulge;
 	}
 }

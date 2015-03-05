@@ -1,3 +1,5 @@
+import processing.core.PVector;
+
 
 
 public class Spring {
@@ -5,6 +7,7 @@ public class Spring {
 	private Particle p1;
 	private Particle p2;
 	private float rest_length;
+	PVector normal;
 	
 	private static int staticSpringID = 0;
 	private int springID;
@@ -16,6 +19,21 @@ public class Spring {
 		
 		staticSpringID++;
 		springID = staticSpringID;
+		
+		normal = PVector.sub(p1.pos, p2.pos);
+		normal.normalize();
+		normal.rotate((float) (Math.PI/2));
+		
+	}
+	
+	public Spring(Particle p1, Particle p2, float rest_length) {
+		this.p1 = p1;
+		this.p2 = p2;
+		this.rest_length = rest_length;
+		
+		normal = PVector.sub(p1.pos, p2.pos);
+		normal.normalize();
+		normal.rotate((float) (Math.PI/2));
 	}
 
 	public Particle getP1() {

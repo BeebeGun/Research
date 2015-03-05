@@ -9,13 +9,15 @@ public class Controls {
 	private int width = 300;
 	Toggle grav_toggle, repulsion_toggle;
 	Button step_button, play_button, user_control, springs, break_springs;
-	boolean gravity = true;
-	boolean repulsion = true;
+	boolean gravity = false; //to set gravity on start
+	boolean repulsion = true; //set repulsion on start
+	boolean planar = true; //set planar force on start
+	boolean bulge = false;
 	public Slider inellastic_slider, radius_slider, particleCount_slider, damping_slider, gravity_slider, repulsion_slider;
 	public Slider spring_constant_slider, spring_damp_slider;
 	float inellasticCollision, radius_float, damp_float;
-	int particleCount = 2;
-	int sliderValue = 120;
+	int particleCount = 1; //set initial particle count
+	float repulsion_strength = 5; //1200
 	float gravity_mag = (float) 5.00;
 	float spring_constant = 500;
 	float spring_damp = (float) 0.5;
@@ -78,7 +80,7 @@ public class Controls {
 				.setPosition(Simulation.width + width/2-100, 45)
 				.setSize(200, 20)
 				.setValue(particleCount)
-				.setRange(0, 1500);
+				.setRange(0, 2000);
 		
 		cp5.getController("Particle Count").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
 		
@@ -116,8 +118,8 @@ public class Controls {
 		repulsion_slider = cp5.addSlider("Repulsion Strength")
 				.setPosition(Simulation.width + width/2-100, 155)
 				.setSize(200, 20)
-				.setValue(50)
-				.setRange(0, 100);
+				.setValue(repulsion_strength)
+				.setRange(0, 1500);
 		
 		cp5.getController("Repulsion Strength").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
 		
@@ -125,7 +127,7 @@ public class Controls {
 				.setPosition(Simulation.width + width/2-100, 275)
 				.setSize(200, 20)
 				.setValue(gui.sim.damp)
-				.setRange(0, 1);
+				.setRange(0, 10);
 		
 		cp5.getController("Viscous Damping").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
 		
@@ -197,7 +199,6 @@ public class Controls {
 
 	public void draw() {
 		
-		//gui.background(150);
 		gui.fill(150);
 		gui.stroke(150);
 		gui.rect(Simulation.width + 1, 0, width, height);
@@ -221,6 +222,7 @@ public class Controls {
 		spring_constant = spring_constant_slider.getValue();
 		spring_damp = spring_damp_slider.getValue();
 		spring_delete = break_springs.getBooleanValue();
+		repulsion_strength = repulsion_slider.getValue();
 		
 		if (pause) 
 			play_button.setCaptionLabel("Play");
