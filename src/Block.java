@@ -8,14 +8,16 @@ public class Block {
 	ArrayList<Block> neighbors;
 	int block_x;
 	int block_y;
+	int block_z;
 	
-	public Block(Simulation env, int i, int j) {
+	public Block(Simulation env, int i, int j, int k) {
 		this.env = env;
 		parts = new ArrayList<Particle>();
 		neighbors = new ArrayList<Block>();
 		
 		this.block_x = i;
 		this.block_y = j;
+		this.block_z = k;
 		
 	}
 
@@ -24,108 +26,167 @@ public class Block {
 	}
 	
 	public String toString() {
-		String str = "Block: (" + block_x + ", " + block_y + ")";
+		String str = "Block: (" + block_x + ", " + block_y + ", " + block_z + ")";
 		return str;
 	}
 	
 	public void addNeighbors() {
 		if (env.grid != null) {
 			neighbors.clear();
-			if (block_x == 0) {
-				//block is in the top left corner
-				if (block_y == 0) {
-					neighbors.add(this);
-					neighbors.add(env.grid.getBlock(block_x+1, block_y));
-					neighbors.add(env.grid.getBlock(block_x, block_y+1));
-					neighbors.add(env.grid.getBlock(block_x+1, block_y+1));
+			
+			neighbors.add(this);
+			
+			//if the back face is in the grid
+			if (block_z + 1 < env.grid.num_depth-1) {
+				
+				//if the left column is there
+				if (block_x-1 > 0) {
+					//the middle block in the left column is there
+					neighbors.add(env.grid.getBlock(block_x-1, block_y, block_z+1));
+					
+					//if the top block is there
+					if (block_y-1 > 0) {
+						neighbors.add(env.grid.getBlock(block_x-1, block_y-1, block_z+1));
+					}
+					
+					//if the bottom block is there
+					if (block_y+1 < env.grid.num_height) {
+						neighbors.add(env.grid.getBlock(block_x-1, block_y+1, block_z+1));
+					}
 				}
-				//box is in the bottom left corner
-				else if (block_y == env.grid.num_height-1) {
-					neighbors.add(this);
-					neighbors.add(env.grid.getBlock(block_x, block_y-1));
-					neighbors.add(env.grid.getBlock(block_x+1, block_y));
-					neighbors.add(env.grid.getBlock(block_x+1, block_y-1));
+				
+				//if the right column is there
+				if (block_x+1 < env.grid.num_width-1) {
+					
+					//the middle block in the right column is there
+					neighbors.add(env.grid.getBlock(block_x+1, block_y, block_z+1));
+					
+					//if the top block is there
+					if (block_y-1 > 0) {
+						neighbors.add(env.grid.getBlock(block_x+1, block_y-1, block_z+1));
+					}
+					
+					//if the bottom block is there
+					if (block_y+1 < env.grid.num_height) {
+						neighbors.add(env.grid.getBlock(block_x+1, block_y+1, block_z+1));
+					}
 				}
-				//box is in the left column
-				else {
-					//top row
-					neighbors.add(env.grid.getBlock(block_x, block_y-1));
-					neighbors.add(env.grid.getBlock(block_x+1, block_y-1));
-					//middle row
-					neighbors.add(env.grid.getBlock(block_x, block_y));
-					neighbors.add(env.grid.getBlock(block_x+1, block_y));
-					//bottom row
-					neighbors.add(env.grid.getBlock(block_x, block_y+1));
-					neighbors.add(env.grid.getBlock(block_x+1, block_y+1));
+				
+				//the middle column is definitely there
+				neighbors.add(env.grid.getBlock(block_x, block_y, block_z+1));
+				
+				//if the top block is there
+				if (block_y-1 > 0) {
+					neighbors.add(env.grid.getBlock(block_x, block_y-1, block_z+1));
 				}
-			}
-			else if (block_x == env.grid.num_height-1) {
-				//block is in the rightmost column
-				//block is in the top right corner
-				if (block_y == 0) {
-					neighbors.add(env.grid.getBlock(block_x, block_y));
-					neighbors.add(env.grid.getBlock(block_x-1, block_y));
-					neighbors.add(env.grid.getBlock(block_x, block_y+1));
-					neighbors.add(env.grid.getBlock(block_x-1, block_y+1));
-				}
-				//box is in the bottom right corner
-				else if (block_y == env.grid.num_height-1) {
-					neighbors.add(env.grid.getBlock(block_x, block_y));
-					neighbors.add(env.grid.getBlock(block_x, block_y-1));
-					neighbors.add(env.grid.getBlock(block_x-1, block_y));
-					neighbors.add(env.grid.getBlock(block_x-1, block_y-1));
-				}
-				//box is in the right column
-				else {
-					//top row
-					neighbors.add(env.grid.getBlock(block_x-1, block_y-1));
-					neighbors.add(env.grid.getBlock(block_x, block_y-1));
-					//middle row
-					neighbors.add(env.grid.getBlock(block_x-1, block_y));
-					neighbors.add(env.grid.getBlock(block_x, block_y));
-					//bottom row
-					neighbors.add(env.grid.getBlock(block_x-1, block_y+1));
-					neighbors.add(env.grid.getBlock(block_x, block_y+1));
+				
+				//if the bottom block is there
+				if (block_y+1 < env.grid.num_height) {
+					neighbors.add(env.grid.getBlock(block_x, block_y+1, block_z+1));
 				}
 			}
-			else if (block_y == 0) {
-				//block is on the top row and not a corner
-				//middle row
-				neighbors.add(env.grid.getBlock(block_x-1, block_y));
-				neighbors.add(this);
-				neighbors.add(env.grid.getBlock(block_x+1, block_y));
-				//bottom row
-				neighbors.add(env.grid.getBlock(block_x-1, block_y+1));
-				neighbors.add(env.grid.getBlock(block_x, block_y+1));
-				neighbors.add(env.grid.getBlock(block_x+1, block_y+1));
+			
+			
+			
+			//if the front face is on the grid
+			if (block_z - 1 > 0) {
+
+				//if the left column is there
+				if (block_x-1 > 0) {
+					//the middle block in the left column is there
+					neighbors.add(env.grid.getBlock(block_x-1, block_y, block_z-1));
+					
+					//if the top block is there
+					if (block_y-1 > 0) {
+						neighbors.add(env.grid.getBlock(block_x-1, block_y-1, block_z-1));
+					}
+					
+					//if the bottom block is there
+					if (block_y+1 < env.grid.num_height) {
+						neighbors.add(env.grid.getBlock(block_x-1, block_y+1, block_z-1));
+					}
+				}
+				
+				//if the right column is there
+				if (block_x+1 < env.grid.num_width-1) {
+					
+					//the middle block in the right column is there
+					neighbors.add(env.grid.getBlock(block_x+1, block_y, block_z-1));
+					
+					//if the top block is there
+					if (block_y-1 > 0) {
+						neighbors.add(env.grid.getBlock(block_x+1, block_y-1, block_z-1));
+					}
+					
+					//if the bottom block is there
+					if (block_y+1 < env.grid.num_height) {
+						neighbors.add(env.grid.getBlock(block_x+1, block_y+1, block_z-1));
+					}
+				}
+				
+				//the middle column is definitely there
+				neighbors.add(env.grid.getBlock(block_x, block_y, block_z-1));
+				
+				//if the top block is there
+				if (block_y-1 > 0) {
+					neighbors.add(env.grid.getBlock(block_x, block_y-1, block_z-1));
+				}
+				
+				//if the bottom block is there
+				if (block_y+1 < env.grid.num_height) {
+					neighbors.add(env.grid.getBlock(block_x, block_y+1, block_z-1));
+				}
+				
 			}
-			else if (block_y == env.grid.num_width-1) {
-				//block is on the bottom row and now a corner
-				//top row
-				neighbors.add(env.grid.getBlock(block_x-1, block_y-1));
-				neighbors.add(env.grid.getBlock(block_x, block_y-1));
-				neighbors.add(env.grid.getBlock(block_x+1, block_y-1));
-				//middle row
-				neighbors.add(env.grid.getBlock(block_x-1, block_y));
-				neighbors.add(this);
-				neighbors.add(env.grid.getBlock(block_x+1, block_y));
+			
+			//the middle of the block is definitely on the grid somewhere
+			
+			//if the left column is there
+			if (block_x-1 > 0) {
+				//the middle block in the left column is there
+				neighbors.add(env.grid.getBlock(block_x-1, block_y, block_z));
+				
+				//if the top block is there
+				if (block_y-1 > 0) {
+					neighbors.add(env.grid.getBlock(block_x-1, block_y-1, block_z));
+				}
+				
+				//if the bottom block is there
+				if (block_y+1 < env.grid.num_height) {
+					neighbors.add(env.grid.getBlock(block_x-1, block_y+1, block_z));
+				}
 			}
-			else {
-				//block is somewhere in the middle
-				//top row
-				neighbors.add(env.grid.getBlock(block_x-1, block_y-1));
-				neighbors.add(env.grid.getBlock(block_x, block_y-1));
-				neighbors.add(env.grid.getBlock(block_x+1, block_y-1));
-				//middle row
-				neighbors.add(env.grid.getBlock(block_x-1, block_y));
-				neighbors.add(this);
-				neighbors.add(env.grid.getBlock(block_x+1, block_y));
-				//bottom row
-				neighbors.add(env.grid.getBlock(block_x-1, block_y+1));
-				neighbors.add(env.grid.getBlock(block_x, block_y+1));
-				neighbors.add(env.grid.getBlock(block_x+1, block_y+1));
+			
+			//if the right column is there
+			if (block_x+1 < env.grid.num_width-1) {
+				
+				//the middle block in the right column is there
+				neighbors.add(env.grid.getBlock(block_x+1, block_y, block_z));
+				
+				//if the top block is there
+				if (block_y-1 > 0) {
+					neighbors.add(env.grid.getBlock(block_x+1, block_y-1, block_z));
+				}
+				
+				//if the bottom block is there
+				if (block_y+1 < env.grid.num_height) {
+					neighbors.add(env.grid.getBlock(block_x+1, block_y+1, block_z));
+				}
 			}
+			
+			//if the top block is there
+			if (block_y-1 > 0) {
+				neighbors.add(env.grid.getBlock(block_x, block_y-1, block_z));
+			}
+			
+			//if the bottom block is there
+			if (block_y+1 < env.grid.num_height) {
+				neighbors.add(env.grid.getBlock(block_x, block_y+1, block_z));
+			}
+			
+			
 		}
+		
 	}
 	
 }

@@ -16,11 +16,11 @@ public class Controls {
 	public Slider inellastic_slider, radius_slider, particleCount_slider, damping_slider, gravity_slider, repulsion_slider;
 	public Slider spring_constant_slider, spring_damp_slider;
 	float inellasticCollision, radius_float, damp_float;
-	int particleCount = 1; //set initial particle count
-	float repulsion_strength = 5; //1200
+	int particleCount = 15; //set initial particle count
+	float repulsion_strength = 1200; //1200
 	float gravity_mag = (float) 5.00;
-	float spring_constant = 500;
-	float spring_damp = (float) 0.5;
+	float spring_constant = 1500;
+	float spring_damp = (float) 50; //0.5
 	boolean pause = true;
 	boolean single_step, user_control_bool, spring_select, spring_delete;
 	

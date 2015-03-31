@@ -1,23 +1,26 @@
 
 import java.util.*;
 
+import processing.core.PVector;
+
 
 public class Simulation {
 
 	public MainGUI gui;
 	float time = 0;
 	float zoom = 1;
-	public float delta_t = (float) 0.01; //0.01
+	public float delta_t = (float) 0.01;
 	boolean pause;
 	public static int width = 400;
 	public static int height = 400;
+	public static int depth = 400;
 	ArrayList<Particle> parts = new ArrayList<Particle>();
 	Random rand = new Random();
 	boolean gravity = true;
-	boolean planar = true;
-	boolean bulge = true;
+	boolean planar = false;
+	boolean bulge = false;
 	float grav_mag;
-	float damp = (float) 0.95;
+	float damp = (float) 5.0; //0.95
 	float inellastic = (float) 0.5;
 	int particleCount = 500;
 	//repulsion radius
@@ -34,67 +37,49 @@ public class Simulation {
 	boolean spring_select, break_springs;
 	Particle s_closest, s_connection = null;
 	float likeRepulse;
-	boolean circle = false;
 	Grid grid;
+	ShapeInput si;
+	boolean shapeFile = true;
 	
 	// initialize stuff
 	public Simulation(MainGUI gui) {
 		this.gui = gui;
 		grid = new Grid(this);
 		//size(width, height);
-		if (!circle) {
+		if (!shapeFile) {
 			for (int i = 0; i < particleCount; i++) {
 				//create random particles; position is [0,1) and velocity is [-1,1)
 				Particle part;
-				part = new Particle(this, rand.nextFloat(), rand.nextFloat(), (float)((rand.nextFloat()*2-1)*0.0), (float)((rand.nextFloat()*2-1)*0.0));
+				part = new Particle(this, rand.nextFloat(), rand.nextFloat(), rand.nextFloat(), (float)(rand.nextFloat()*2-1), (float)(rand.nextFloat()*2-1), (float)(rand.nextFloat()*2-1));
 				parts.add(part);
 			}
 		}
-		else {
-			//code to make a star
-			for (int i = 0; i < 5; i++) {
-				int degree = 360/5*i;
-				float r = (float) 0.2;
-				Particle part = new Particle(this, (float) (0.5 + Math.cos(Math.toRadians(degree))*r), (float) (0.5 + Math.sin(Math.toRadians(degree))*r), (float) 0.0, (float) 0.0);
-				parts.add(part);
+		if (shapeFile) {
+			si = new ShapeInput();
+			for (int i = 0; i < si.xyz.size(); i++) {
+				PVector coord = si.xyz.get(i);
+				parts.add(new Particle(this, (float) ((coord.x+1)/8+0.375), (float) ((coord.y+1)/8+0.375), (float) ((coord.z+1)/8+0.5), 0, 0, 0));
 			}
-			for (int i = 0; i < 5; i++) {
-				int degree = 360/5*i + 36; //equilibrium at 36
-				float r = (float) 0.1;
-				Particle part = new Particle(this, (float) (0.5 + Math.cos(Math.toRadians(degree))*r), (float) (0.5 + Math.sin(Math.toRadians(degree))*r), (float) 0.0, (float) 0.0);
-				parts.add(part);
+			for (int j = 0; j < si.springs.size(); j++) {
+				//the index of the three points in the face
+				int one = (int) si.springs.get(j).x;
+				int two = (int) si.springs.get(j).y;
+				int three = (int) si.springs.get(j).z;
+				
+				calcNormal(si);
+				
+				Spring s1 = new Spring(parts.get(one), parts.get(two));
+				parts.get(one).springs.add(s1);
+				parts.get(two).springs.add(s1);
+				Spring s2 = new Spring(parts.get(two), parts.get(three));
+				parts.get(two).springs.add(s2);
+				parts.get(three).springs.add(s2);
+				Spring s3 = new Spring(parts.get(three), parts.get(one));
+				parts.get(three).springs.add(s3);
+				parts.get(one).springs.add(s3);
 			}
-			Spring spr1 = new Spring(parts.get(9), parts.get(0));
-			parts.get(0).springs.add(spr1);
-			parts.get(9).springs.add(spr1);
-			Spring spr2 = new Spring(parts.get(0), parts.get(5));
-			parts.get(0).springs.add(spr2);
-			parts.get(5).springs.add(spr2);
-			Spring spr3 = new Spring(parts.get(5), parts.get(1));
-			parts.get(5).springs.add(spr3);
-			parts.get(1).springs.add(spr3);
-			Spring spr4 = new Spring(parts.get(1), parts.get(6));
-			parts.get(1).springs.add(spr4);
-			parts.get(6).springs.add(spr4);
-			Spring spr5 = new Spring(parts.get(6), parts.get(2));
-			parts.get(6).springs.add(spr5);
-			parts.get(2).springs.add(spr5);
-			Spring spr6 = new Spring(parts.get(2), parts.get(7));
-			parts.get(2).springs.add(spr6);
-			parts.get(7).springs.add(spr6);
-			Spring spr7 = new Spring(parts.get(7), parts.get(3));
-			parts.get(7).springs.add(spr7);
-			parts.get(3).springs.add(spr7);
-			Spring spr8 = new Spring(parts.get(3), parts.get(8));
-			parts.get(3).springs.add(spr8);
-			parts.get(8).springs.add(spr8);
-			Spring spr9 = new Spring(parts.get(8), parts.get(4));
-			parts.get(8).springs.add(spr9);
-			parts.get(4).springs.add(spr9);
-			Spring spr10 = new Spring(parts.get(4), parts.get(9));
-			parts.get(4).springs.add(spr10);
-			parts.get(9).springs.add(spr10);
 		}
+		
 	}
 	
 	// Draw the scene
@@ -113,7 +98,9 @@ public class Simulation {
 			grid.updateGrid();
 			for (int i = 0; i < grid.num_width; i++) {
 				for (int j = 0; j < grid.num_height; j++) {
-					grid.blocks[i][j].addNeighbors();
+					for (int k = 0; k < grid.num_depth; k++) {
+						grid.blocks[i][j][k].addNeighbors();
+					}
 				}
 			}
 		}
@@ -124,10 +111,13 @@ public class Simulation {
 		for (Particle p : parts) {
 			p.assignBlock();
 		}
-		
+
 		for (Particle p : parts) {
 			p.update();
 		}
+		
+		sort();
+		calcNormal(si);
 		
 		if (mousedown) {
 			//if the user currently has control of this particle
@@ -138,6 +128,7 @@ public class Simulation {
 			}
 		}
 	
+		Particle newpart = new Particle(this, 0, 0, 0, 0, 0, 0);
 		for (Particle part : parts) {
 			//if not the particle the user is currently controlling, draw it
 			if (mousedown && part != closest) {
@@ -146,10 +137,19 @@ public class Simulation {
 			}
 			//if the mouse is not down, draw all of them
 			else if (!mousedown) {
-				gui.fill(255, 255, 255);
-				part.draw();
+				if (part.particleId == 12) {
+					gui.fill(255, 00, 00);
+					//newpart = part.divide();
+					//part.draw();
+				}
+				else {
+					int temp = (int) (part.pos.z/depth*255);
+					gui.fill(temp, temp, temp);
+					part.draw();
+				}
 			}
 		}
+		//parts.add(newpart);
 		
 	}
 	
@@ -224,7 +224,7 @@ public class Simulation {
 	}
 	
 	public void updateParticleCount(int newCount) {
-		if (!circle) {
+		if (!shapeFile) {
 			if (particleCount < parts.size()) { //delete some particles randomly
 				int difference = parts.size() - particleCount;
 				for (int i = 0; i < difference; i++) {
@@ -257,13 +257,10 @@ public class Simulation {
 				int difference = particleCount - parts.size();
 				for (int i = 0; i < difference; i++) {
 					Particle part;
-					part = new Particle(this, rand.nextFloat(), rand.nextFloat(), (float)((rand.nextFloat()*2-1)*0.0), (float)((rand.nextFloat()*2-1)*0.0));
+					part = new Particle(this, rand.nextFloat(), rand.nextFloat(), rand.nextFloat(), (float)(rand.nextFloat()*2-1), (float)(rand.nextFloat()*2-1), (float)(rand.nextFloat()*2-1));
 					parts.add(part);
 				}
 			}
-		}
-		else {
-			//if circle, do nothing
 		}
 	}
 	
@@ -281,4 +278,41 @@ public class Simulation {
 			}
 		}
 	}
+	
+	public void sort() {
+		Collections.sort(parts, new Comparator<Particle>() {
+	    @Override
+	    public int compare(Particle  p1, Particle  p2) {
+	            return  p1.compareTo(p2);
+	        }
+	    });
+	}
+	
+	public void calcNormal(ShapeInput si) {
+		for (Particle p : parts) {
+			p.normal = new PVector(0, 0, 0);
+		}
+		for (int j = 0; j < si.springs.size(); j++) {
+			//the index of the three points in the face
+			int one = (int) si.springs.get(j).x;
+			int two = (int) si.springs.get(j).y;
+			int three = (int) si.springs.get(j).z;
+			
+			PVector v1 = new PVector(parts.get(one).pos.x - parts.get(two).pos.x, parts.get(one).pos.y - parts.get(two).pos.y, parts.get(one).pos.z - parts.get(two).pos.z);
+			PVector v2 = new PVector(parts.get(three).pos.x - parts.get(two).pos.x, parts.get(three).pos.y - parts.get(two).pos.y, parts.get(three).pos.z - parts.get(two).pos.z);
+			PVector face_norm = v1.cross(v2); //normal of the face
+			
+			face_norm = PVector.div(face_norm, face_norm.mag());
+			
+			parts.get(one).normal.add(face_norm);
+			parts.get(two).normal.add(face_norm);
+			parts.get(three).normal.add(face_norm);
+		}
+		
+		for (Particle p : parts) {
+			p.normal = PVector.div(p.normal, p.normal.mag());
+		}
+		
+	}
+	
 }

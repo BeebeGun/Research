@@ -13,7 +13,7 @@ public class MainGUI extends PApplet {
 	boolean single_step_last;
 	
 	public void setup() {
-		size(WIDTH, HEIGHT);
+		size(WIDTH, HEIGHT); //OPENGL
 		background(90);
 		
 		sim = new Simulation(this);
