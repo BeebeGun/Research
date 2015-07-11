@@ -13,8 +13,10 @@ public class MainGUI extends PApplet {
 	boolean single_step_last;
 	
 	public void setup() {
-		size(WIDTH, HEIGHT); //OPENGL
+		size(WIDTH, HEIGHT, P3D); //OPENGL
+		ortho(0, width, 0, height, 0, 10000);
 		background(90);
+		//camera();
 		
 		sim = new Simulation(this);
 		con = new Controls(MainGUI.this);
@@ -38,8 +40,12 @@ public class MainGUI extends PApplet {
 		single_step_last = con.single_step;
 		
 		translate(0, 0);
-		if (!con.pause)
+		if (!con.pause) {
+			//pushMatrix();
+			//rotateY(radians(con.rotation_angle));
 			sim.draw();
+			//popMatrix();
+		}
 
 		if(con.pause && con.single_step) {
 			//this.redraw();
@@ -80,5 +86,6 @@ public class MainGUI extends PApplet {
 		sim.repulsion_strength = con.repulsion_strength;
 		sim.planar = con.planar;
 		sim.bulge = con.bulge;
+		sim.rotation_angle = con.rotation_angle;
 	}
 }

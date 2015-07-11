@@ -15,12 +15,14 @@ public class Controls {
 	boolean bulge = false;
 	public Slider inellastic_slider, radius_slider, particleCount_slider, damping_slider, gravity_slider, repulsion_slider;
 	public Slider spring_constant_slider, spring_damp_slider;
+	public Slider rotation_slider;
 	float inellasticCollision, radius_float, damp_float;
-	int particleCount = 15; //set initial particle count
-	float repulsion_strength = 1200; //1200
+	int particleCount = 0; //set initial particle count
+	float repulsion_strength = 2500; //1200
 	float gravity_mag = (float) 5.00;
 	float spring_constant = 1500;
 	float spring_damp = (float) 50; //0.5
+	float rotation_angle = 0;
 	boolean pause = true;
 	boolean single_step, user_control_bool, spring_select, spring_delete;
 	
@@ -84,6 +86,13 @@ public class Controls {
 		
 		cp5.getController("Particle Count").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
 		
+		rotation_slider = cp5.addSlider("Rotation")
+				.setPosition(Simulation.width + width/2-100, 95)
+				.setSize(200, 20)
+				.setValue(rotation_angle)
+				.setRange(0, 360);
+		
+		cp5.getController("Rotation").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
 		
 		//FORCES TAB
 		grav_toggle = cp5.addToggle("Gravity")
@@ -119,7 +128,7 @@ public class Controls {
 				.setPosition(Simulation.width + width/2-100, 155)
 				.setSize(200, 20)
 				.setValue(repulsion_strength)
-				.setRange(0, 1500);
+				.setRange(0, 10000);
 		
 		cp5.getController("Repulsion Strength").getCaptionLabel().align(ControlP5.RIGHT, ControlP5.BOTTOM_OUTSIDE).setPaddingX(0);
 		
@@ -223,6 +232,7 @@ public class Controls {
 		spring_damp = spring_damp_slider.getValue();
 		spring_delete = break_springs.getBooleanValue();
 		repulsion_strength = repulsion_slider.getValue();
+		rotation_angle = rotation_slider.getValue();
 		
 		if (pause) 
 			play_button.setCaptionLabel("Play");

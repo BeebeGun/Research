@@ -1,4 +1,5 @@
 
+import java.awt.Color;
 import java.util.*;
 
 import processing.core.PVector;
@@ -7,6 +8,7 @@ import processing.core.PVector;
 public class Simulation {
 
 	public MainGUI gui;
+	public double scalefactor = 2;
 	float time = 0;
 	float zoom = 1;
 	public float delta_t = (float) 0.01;
@@ -15,9 +17,11 @@ public class Simulation {
 	public static int height = 400;
 	public static int depth = 400;
 	ArrayList<Particle> parts = new ArrayList<Particle>();
+	HashMap<Integer, Particle> map = new HashMap<Integer, Particle>();
+	ArrayList<Face> faces = new ArrayList<Face>();
 	Random rand = new Random();
-	boolean gravity = true;
-	boolean planar = false;
+	boolean gravity = false;
+	boolean planar = true;
 	boolean bulge = false;
 	float grav_mag;
 	float damp = (float) 5.0; //0.95
@@ -40,6 +44,10 @@ public class Simulation {
 	Grid grid;
 	ShapeInput si;
 	boolean shapeFile = true;
+	PVector camera;
+	float cameraangle = (float) 30.0;
+	public float rotation_angle;
+	boolean face_bool = true;
 	
 	// initialize stuff
 	public Simulation(MainGUI gui) {
@@ -52,14 +60,21 @@ public class Simulation {
 				Particle part;
 				part = new Particle(this, rand.nextFloat(), rand.nextFloat(), rand.nextFloat(), (float)(rand.nextFloat()*2-1), (float)(rand.nextFloat()*2-1), (float)(rand.nextFloat()*2-1));
 				parts.add(part);
+				map.put(part.particleId, part);
 			}
 		}
+		System.out.println("Before: " + parts.size());
 		if (shapeFile) {
 			si = new ShapeInput();
+			//create all of the particles for the shape
 			for (int i = 0; i < si.xyz.size(); i++) {
 				PVector coord = si.xyz.get(i);
-				parts.add(new Particle(this, (float) ((coord.x+1)/8+0.375), (float) ((coord.y+1)/8+0.375), (float) ((coord.z+1)/8+0.5), 0, 0, 0));
+				//change based on scalefactor
+				Particle newpart = new Particle(this, (float) ((coord.x+1)/8+0.375), (float) ((coord.y+1)/8+0.375), (float) ((coord.z+1)/8+0.375), 0, 0, 0);
+				parts.add(newpart);
+				//map.put(newpart.particleId, newpart);
 			}
+			//create the faces for the shape
 			for (int j = 0; j < si.springs.size(); j++) {
 				//the index of the three points in the face
 				int one = (int) si.springs.get(j).x;
@@ -67,6 +82,10 @@ public class Simulation {
 				int three = (int) si.springs.get(j).z;
 				
 				calcNormal(si);
+				
+				Face f = new Face(parts.get(one), parts.get(two), parts.get(three));
+				faces.add(f);
+				//System.out.println(faces);
 				
 				Spring s1 = new Spring(parts.get(one), parts.get(two));
 				parts.get(one).springs.add(s1);
@@ -78,15 +97,23 @@ public class Simulation {
 				parts.get(three).springs.add(s3);
 				parts.get(one).springs.add(s3);
 			}
+			System.out.println("After: " + parts.size());
 		}
 		
 	}
 	
 	// Draw the scene
+	@SuppressWarnings("static-access")
 	public void draw() {
 		//sets the background color to grey
 		gui.fill(192,192,192);
+		gui.pushMatrix();
+		
+		gui.translate(0,0,(float)(-depth*scalefactor*10));
+		
 		gui.rect(0, 0, width, height);
+		
+		gui.popMatrix();
 		//gui.background(192,192,192);
 		
 		
@@ -116,7 +143,7 @@ public class Simulation {
 			p.update();
 		}
 		
-		sort();
+		//sort();
 		calcNormal(si);
 		
 		if (mousedown) {
@@ -127,34 +154,119 @@ public class Simulation {
 				closest.draw();
 			}
 		}
-	
-		Particle newpart = new Particle(this, 0, 0, 0, 0, 0, 0);
-		for (Particle part : parts) {
-			//if not the particle the user is currently controlling, draw it
-			if (mousedown && part != closest) {
-				gui.fill(255, 255, 255);
-				part.draw();
-			}
-			//if the mouse is not down, draw all of them
-			else if (!mousedown) {
-				if (part.particleId == 12) {
-					gui.fill(255, 00, 00);
-					//newpart = part.divide();
-					//part.draw();
-				}
-				else {
-					int temp = (int) (part.pos.z/depth*255);
-					gui.fill(temp, temp, temp);
+		if (!face_bool) {
+			//Particle newpart = new Particle(this, 0, 0, 0, 0, 0, 0);
+			for (Particle part : parts) {
+				//System.out.println(part);
+				//if not the particle the user is currently controlling, draw it
+				if (mousedown && part != closest) {
+					gui.fill(255, 255, 255);
 					part.draw();
 				}
+				//if the mouse is not down, draw all of them
+				else if (!mousedown) {
+					if (part.color.getRed() != 0 || part.color.getGreen() != 00 || part.color.getBlue() != 00) {
+						gui.fill(part.color.getRGB());
+						part.draw();
+					}
+					else {
+						int temp = (int) (part.pos.z/depth*255);
+						gui.fill(temp, temp, temp);
+						part.draw();
+					}
+				}
 			}
-		}
-		//parts.add(newpart);
+		}//!face_bool
+		
+		//System.out.println("Post divide: " + parts.size());
+		//map.put(newpart.particleId, newpart);
+		
+		
+		//draw faces
+		if (face_bool) {
+			gui.fill(255, 255, 255);
+			for (int i = 0; i < faces.size(); i++) {
+				Particle p1 = faces.get(i).p1;
+				Particle p2 = faces.get(i).p2;
+				Particle p3 = faces.get(i).p3;
+				PVector average = PVector.add(p1.pos, p2.pos);
+				average = PVector.add(average, p3.pos);
+				average = PVector.div(average, (float)3.0);
+				float k = (float) 0.2;
+				PVector temp1 = PVector.lerp(p1.pos, average, k);
+				PVector temp2 = PVector.lerp(p2.pos, average, k);
+				PVector temp3 = PVector.lerp(p3.pos, average, k);
+				
+				//System.out.println("TEMP2: " + temp2);
+				//System.out.println("TEMP3: " + temp3);
+				
+				gui.pushMatrix();
+		
+				
+				gui.scale((float)(1/scalefactor), (float)(1/scalefactor), (float)(1/scalefactor));
+				
+				gui.translate((float) (width/2*scalefactor), (float) (height/2*scalefactor), depth/2);
+				
+				gui.rotateY(gui.radians(rotation_angle));
+				
+				gui.translate(-width/2, -height/2, -depth/2);
+				
+				gui.beginShape(gui.TRIANGLES);
+				gui.vertex(temp1.x, temp1.y, temp1.z);
+				gui.vertex(temp2.x, temp2.y, temp2.z);
+				gui.vertex(temp3.x, temp3.y, temp3.z);
+				gui.endShape();
+				
+				
+				/*if (faces.get(i).normal != null) {
+					PVector normal = faces.get(i).normal;
+					//System.out.println("Normal " + i + ": " + normal);
+					float value = (float) 10;
+					faces.get(i).update();
+					gui.line(average.x, average.y, average.z, (float) (average.x+normal.x*value), (float) (average.y+normal.y*value), (float)(average.z+normal.z*value));
+				}*/
+				
+				gui.popMatrix();
+				
+			}
+		}//face_bool
 		
 	}
 	
 	//keyboard commands
 	public void keyPressed() {
+		if (gui.key == 'd') {
+			int index = rand.nextInt(parts.size());
+			//System.out.println(index);
+			
+			Particle divider = parts.get(index);
+			Particle newpart = cellDivision(divider);
+			
+			
+			if (newpart != null)
+				parts.add(newpart);
+		}
+		
+		if (gui.key == 'a') {
+			ArrayList<Particle> newparts = new ArrayList<Particle>();
+			
+			for (int i = 0; i < parts.size(); i++) {
+				Particle newpart = cellDivision(parts.get(i));
+				if (newpart != null)
+					newparts.add(newpart);
+			}
+			
+			for (Particle newpart : newparts)
+				parts.add(newpart);
+			
+			System.out.println("Number of particles: " + parts.size());
+		}
+		
+		if (gui.key == 'p') {
+			cameraangle += 10;
+			camera.x = (float)((gui.height/2.0) / Math.tan(Math.PI*cameraangle / 180.0));
+			gui.camera(camera.x, camera.y, camera.z, (float) (gui.width/2.0), (float) (gui.height/2.0), 0, 0, 1, 0);
+		}
 	}
 	
 	@SuppressWarnings("static-access")
@@ -259,6 +371,7 @@ public class Simulation {
 					Particle part;
 					part = new Particle(this, rand.nextFloat(), rand.nextFloat(), rand.nextFloat(), (float)(rand.nextFloat()*2-1), (float)(rand.nextFloat()*2-1), (float)(rand.nextFloat()*2-1));
 					parts.add(part);
+					map.put(part.particleId, part);
 				}
 			}
 		}
@@ -313,6 +426,13 @@ public class Simulation {
 			p.normal = PVector.div(p.normal, p.normal.mag());
 		}
 		
+	}
+	
+	public Particle cellDivision (Particle p) {
+		Particle newp = p.divide();
+		if (newp != null)
+			newp.color = new Color (00, 255, 00); //color the new particle green
+		return newp;
 	}
 	
 }

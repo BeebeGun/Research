@@ -12,9 +12,9 @@ public class Grid {
 	@SuppressWarnings("static-access")
 	public Grid(Simulation env) {
 		this.env = env;
-		int sim_w = env.width;
-		int sim_h = env.height;
-		int sim_d = env.depth;
+		int sim_w = (int) (env.width*env.scalefactor);
+		int sim_h = (int) (env.height*env.scalefactor);
+		int sim_d = (int) (env.depth*env.scalefactor);
 		repulsion_radius = 30;
 		//float repulsion_radius = env.radius;
 		
